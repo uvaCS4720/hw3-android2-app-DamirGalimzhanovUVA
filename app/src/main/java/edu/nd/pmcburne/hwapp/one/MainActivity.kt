@@ -1,6 +1,7 @@
 package edu.nd.pmcburne.hwapp.one
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -68,7 +69,7 @@ class MainActivity : ComponentActivity() {
 
     private val vm: MainActivityViewModel by viewModels {
         BasketballViewModelFactory(
-            (application as BasketballApp).repo
+            (applicationContext as BasketballApp).repo
         )
     }
 //    private val vm: MainActivityViewModel by viewModels()
@@ -144,7 +145,9 @@ class MainActivityViewModel(private val repo: BasketballRepo): ViewModel() {
         viewModelScope.launch {
             repo.pullGamesFromRemote(showMen, datePicked)
             games.clear()
-            games.addAll(repo.getGamesFromLocal(showMen, datePicked))
+            val loaded = repo.getGamesFromLocal(showMen, datePicked)
+            Log.d("Repo", "local returned ${loaded.size} games")
+            games.addAll(loaded)
         }
     }
 

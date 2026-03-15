@@ -3,6 +3,6 @@ package edu.nd.pmcburne.hwapp.one
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class GamesDTO(
-    val games: List<GameWrapperDTO>
+data class GameWrapperDTO(
+    val game: GameDTO
 )

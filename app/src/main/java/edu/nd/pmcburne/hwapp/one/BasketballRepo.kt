@@ -9,6 +9,7 @@ import java.time.ZoneId
 import java.util.Date
 import androidx.room.*
 import android.content.Context
+import android.util.Log
 import java.time.format.DateTimeFormatter
 
 class BasketballRepo (
@@ -33,22 +34,28 @@ class BasketballRepo (
             .toInstant()
             .atZone(ZoneId.of("America/New_York"))
             .toLocalDate()
-        val year = extractableDate.year
-        val month = extractableDate.month.value
-        val day = extractableDate.dayOfMonth
+        val year = extractableDate.year.toString()
+        val month = extractableDate.monthValue.toString().padStart(2, '0')
+        val day = extractableDate.dayOfMonth.toString().padStart(2, '0')
+        val requestedDateString = extractableDate.format(DateTimeFormatter.ofPattern("MM/dd/yyyy"))
 
         try {
+            Log.d("Repo", "requested date = $month/$day/$year")
             val gamesDTO = api.getGames(gender, year, month, day)
-            for (game in gamesDTO.games) {
-                val winner: String? = if (game.home.winner) {
-                    game.home.names.name
-                } else if (game.away.winner) {
-                    game.away.names.name
-                } else {
-                    null
+            Log.d("Repo", "api returned ${gamesDTO.games.size} games")
+            for (gameWrapper in gamesDTO.games) {
+                val game = gameWrapper.game
+                Log.d("Repo", "loop game startDate=${game.startDate}, id=${game.gameID}, home=${game.home.names.name}")
+                if (game.startDate != requestedDateString) continue
+
+                val winner = when {
+                    game.home.winner -> game.home.names.name
+                    game.away.winner -> game.away.names.name
+                    else -> null
                 }
+
                 val newGame = Game(
-                    gameID = game.gameID.toInt(),
+                    gameID = game.gameID.toIntOrNull() ?: continue,
                     homeTeam = game.home.names.name,
                     awayTeam = game.away.names.name,
                     gameStatus = game.gameState,
@@ -59,10 +66,12 @@ class BasketballRepo (
                     startTime = game.startTime,
                     gender = gender
                 )
-                gameDao.insertGame(newGame);
+
+                gameDao.insertGame(newGame)
+                Log.d("Repo", "inserted game id=${newGame.gameID} startDate=${newGame.startDate}")
             }
         } catch (e: Exception) {
-            println("Error: ${e.message}")
+            e.printStackTrace()
         }
 
     }
